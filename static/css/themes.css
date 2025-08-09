@@ -2,18 +2,23 @@
 
 /* Keychain Theme - Bunny/Matcha */
 [data-theme="keychain"] {
-    --primary-color: #ffb6c1;
-    --secondary-color: #98fb98;
-    --accent-color: #ffd700;
-    --bg-color: #fff5f5;
-    --text-color: #8b4513;
-    --card-bg: rgba(255, 240, 245, 0.9);
-    --navbar-bg: rgba(255, 182, 193, 0.95);
+    --primary-color: #ff9ebc;
+    --secondary-color: #b8e6b8;
+    --accent-color: #ffd1dc;
+    --bg-color: #fff8f8;
+    --text-color: #d4518c;
+    --card-bg: rgba(255, 245, 248, 0.95);
+    --navbar-bg: rgba(255, 182, 193, 0.98);
+    --shadow-color: rgba(255, 158, 188, 0.3);
 }
 
 [data-theme="keychain"] body {
-    background: linear-gradient(135deg, #fff5f5 0%, #f0fff0 50%, #fffacd 100%);
-    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20">🐰</text></svg>'), auto;
+    background: radial-gradient(circle at 20% 20%, #ffe4e1 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #f0fff0 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, #fff8dc 0%, transparent 50%),
+    linear-gradient(135deg, #fff5f5 0%, #f8fff8 50%, #fffacd 100%);
+    min-height: 100vh;
+    position: relative;
 }
 
 [data-theme="keychain"] .garden-navbar {
@@ -35,19 +40,27 @@
 
 [data-theme="keychain"] .section-card {
     background: var(--card-bg);
-    border: 2px solid var(--primary-color);
+    border: 3px solid var(--primary-color);
+    border-radius: 25px;
+    box-shadow: 0 10px 30px var(--shadow-color);
+    backdrop-filter: blur(10px);
 }
 
 [data-theme="keychain"] .btn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-    color: var(--text-color);
+    background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+    border: none;
+    color: white;
+    border-radius: 20px;
+    padding: 12px 25px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px var(--shadow-color);
 }
 
 [data-theme="keychain"] .btn-primary:hover {
-    background: var(--secondary-color);
-    border-color: var(--secondary-color);
-    transform: scale(1.05);
+    background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px var(--shadow-color);
 }
 
 [data-theme="keychain"] .floating-particles::before {
@@ -58,18 +71,23 @@
 
 /* Bug Theme - Koala/Forest */
 [data-theme="bug"] {
-    --primary-color: #228b22;
-    --secondary-color: #8fbc8f;
-    --accent-color: #daa520;
-    --bg-color: #f0f8f0;
-    --text-color: #2f4f2f;
-    --card-bg: rgba(240, 248, 240, 0.9);
-    --navbar-bg: rgba(143, 188, 143, 0.95);
+    --primary-color: #4caf50;
+    --secondary-color: #81c784;
+    --accent-color: #ffb74d;
+    --bg-color: #f1f8e9;
+    --text-color: #2e7d32;
+    --card-bg: rgba(240, 248, 240, 0.95);
+    --navbar-bg: rgba(129, 199, 132, 0.98);
+    --shadow-color: rgba(76, 175, 80, 0.3);
 }
 
 [data-theme="bug"] body {
-    background: linear-gradient(135deg, #f0f8f0 0%, #e6f3e6 50%, #dcedc8 100%);
-    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20">🐨</text></svg>'), auto;
+    background: radial-gradient(circle at 30% 30%, #e8f5e8 0%, transparent 50%),
+                radial-gradient(circle at 70% 70%, #fff3e0 0%, transparent 50%),
+                radial-gradient(circle at 50% 20%, #f3e5f5 0%, transparent 50%),
+    linear-gradient(135deg, #f1f8e9 0%, #e8f5e8 50%, #fff8e1 100%);
+    min-height: 100vh;
+    position: relative;
 }
 
 [data-theme="bug"] .garden-navbar {
@@ -91,20 +109,27 @@
 
 [data-theme="bug"] .section-card {
     background: var(--card-bg);
-    border: 2px solid var(--primary-color);
-    box-shadow: 0 5px 15px rgba(34, 139, 34, 0.2);
+    border: 3px solid var(--primary-color);
+    border-radius: 25px;
+    box-shadow: 0 10px 30px var(--shadow-color);
+    backdrop-filter: blur(10px);
 }
 
 [data-theme="bug"] .btn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
+    background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+    border: none;
     color: white;
+    border-radius: 20px;
+    padding: 12px 25px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 5px 15px var(--shadow-color);
 }
 
 [data-theme="bug"] .btn-primary:hover {
-    background: var(--secondary-color);
-    border-color: var(--secondary-color);
-    transform: scale(1.05);
+    background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px var(--shadow-color);
 }
 
 [data-theme="bug"] .floating-particles::before {
@@ -146,18 +171,23 @@
 
 /* Dark Theme - Magical Forest */
 [data-theme="dark"] {
-    --primary-color: #9370db;
-    --secondary-color: #663399;
-    --accent-color: #ff69b4;
-    --bg-color: #191970;
+    --primary-color: #ba68c8;
+    --secondary-color: #9c27b0;
+    --accent-color: #e91e63;
+    --bg-color: #1a1a2e;
     --text-color: #e6e6fa;
-    --card-bg: rgba(25, 25, 112, 0.8);
-    --navbar-bg: rgba(72, 61, 139, 0.95);
+    --card-bg: rgba(26, 26, 46, 0.95);
+    --navbar-bg: rgba(186, 104, 200, 0.98);
+    --shadow-color: rgba(186, 104, 200, 0.4);
 }
 
 [data-theme="dark"] body {
-    background: linear-gradient(135deg, #191970 0%, #483d8b 50%, #2f2f4f 100%);
-    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20">🌙</text></svg>'), auto;
+    background: radial-gradient(circle at 20% 20%, #2d1b69 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, #4a148c 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, #ad1457 0%, transparent 50%),
+    linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    min-height: 100vh;
+    position: relative;
     color: var(--text-color);
 }
 
@@ -181,22 +211,28 @@
 
 [data-theme="dark"] .section-card {
     background: var(--card-bg);
-    border: 2px solid var(--primary-color);
-    box-shadow: 0 5px 15px rgba(147, 112, 219, 0.3);
+    border: 3px solid var(--primary-color);
+    border-radius: 25px;
+    box-shadow: 0 10px 30px var(--shadow-color), 0 0 20px rgba(186, 104, 200, 0.2);
+    backdrop-filter: blur(10px);
     color: var(--text-color);
 }
 
 [data-theme="dark"] .btn-primary {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
+    background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+    border: none;
     color: white;
+    border-radius: 20px;
+    padding: 12px 25px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px var(--shadow-color);
 }
 
 [data-theme="dark"] .btn-primary:hover {
-    background: var(--accent-color);
-    border-color: var(--accent-color);
-    transform: scale(1.05);
-    box-shadow: 0 0 20px var(--accent-color);
+    background: linear-gradient(45deg, var(--accent-color), var(--secondary-color));
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px var(--shadow-color), 0 0 20px var(--accent-color);
 }
 
 [data-theme="dark"] .floating-particles::before {

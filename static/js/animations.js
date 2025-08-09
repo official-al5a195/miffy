@@ -17,7 +17,7 @@ class AnimationSystem {
         // Set a timer to complete the intro after animation
         setTimeout(() => {
             this.completeFlowerIntro();
-        }, 6000); // 6 seconds for full flower animation
+        }, 2000); // 2 seconds for faster loading
     }
 
     completeFlowerIntro() {

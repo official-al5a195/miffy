@@ -62,6 +62,24 @@ class EnchantedLoveGardenApp {
                 this.likeItem(btn.dataset.section, btn.dataset.id);
             }
         });
+
+        // Edit buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.edit-btn') || e.target.closest('.edit-btn')) {
+                e.preventDefault();
+                const btn = e.target.matches('.edit-btn') ? e.target : e.target.closest('.edit-btn');
+                this.editItem(btn.dataset.section, btn.dataset.id);
+            }
+        });
+
+        // Delete buttons
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('.delete-btn') || e.target.closest('.delete-btn')) {
+                e.preventDefault();
+                const btn = e.target.matches('.delete-btn') ? e.target : e.target.closest('.delete-btn');
+                this.deleteItem(btn.dataset.section, btn.dataset.id);
+            }
+        });
     }
 
     async handlePasscodeSubmit(e) {
@@ -208,10 +226,6 @@ class EnchantedLoveGardenApp {
                 return await this.createKoalaSection();
             case 'spotify':
                 return this.createSpotifySection();
-            case 'sudoku':
-                return gameManager.createSudoku();
-            case 'tictactoe':
-                return gameManager.createTicTacToe();
             case 'cardmatch':
                 return gameManager.createCardMatch();
             default:
@@ -260,15 +274,25 @@ class EnchantedLoveGardenApp {
         }
         
         return affirmations.map(affirmation => `
-            <div class="card mb-3">
+            <div class="card mb-3 affirmation-card" data-id="${affirmation.id}">
                 <div class="card-body">
-                    <p class="card-text">${this.escapeHtml(affirmation.text)}</p>
+                    <p class="card-text affirmation-text">${this.escapeHtml(affirmation.text)}</p>
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">${new Date(affirmation.date).toLocaleDateString()}</small>
-                        <button class="btn btn-sm btn-outline-danger like-btn" 
-                                data-section="affirmations" data-id="${affirmation.id}">
-                            <i class="fas fa-heart"></i> ${affirmation.likes || 0}
-                        </button>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-danger like-btn" 
+                                    data-section="affirmations" data-id="${affirmation.id}">
+                                <i class="fas fa-heart"></i> ${affirmation.likes || 0}
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary edit-btn" 
+                                    data-section="affirmations" data-id="${affirmation.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" 
+                                    data-section="affirmations" data-id="${affirmation.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -335,14 +359,26 @@ class EnchantedLoveGardenApp {
         }
         
         return dateIdeas.map(idea => `
-            <div class="card mb-3">
+            <div class="card mb-3 date_idea-card" data-id="${idea.id}">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start">
-                        <h5 class="card-title">${this.escapeHtml(idea.title)}</h5>
+                        <h5 class="card-title date_idea-text">${this.escapeHtml(idea.title)}</h5>
                         <span class="badge bg-primary">${idea.category}</span>
                     </div>
-                    <p class="card-text">${this.escapeHtml(idea.description)}</p>
-                    <small class="text-muted">${new Date(idea.date).toLocaleDateString()}</small>
+                    <p class="card-text date_idea-description">${this.escapeHtml(idea.description)}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">${new Date(idea.date).toLocaleDateString()}</small>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary edit-btn" 
+                                    data-section="date_ideas" data-id="${idea.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" 
+                                    data-section="date_ideas" data-id="${idea.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -417,14 +453,26 @@ class EnchantedLoveGardenApp {
         };
         
         return entries.slice().reverse().map(entry => `
-            <div class="card mb-3">
+            <div class="card mb-3 diary_entry-card" data-id="${entry.id}">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h5 class="card-title">${this.escapeHtml(entry.title)}</h5>
+                        <h5 class="card-title diary_entry-text">${this.escapeHtml(entry.title)}</h5>
                         <span class="badge bg-secondary">${moodEmojis[entry.mood] || '😊'}</span>
                     </div>
-                    <p class="card-text">${this.escapeHtml(entry.content)}</p>
-                    <small class="text-muted">${new Date(entry.date).toLocaleDateString()}</small>
+                    <p class="card-text diary_entry-content">${this.escapeHtml(entry.content)}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">${new Date(entry.date).toLocaleDateString()}</small>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary edit-btn" 
+                                    data-section="diary_entries" data-id="${entry.id}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" 
+                                    data-section="diary_entries" data-id="${entry.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -765,6 +813,108 @@ class EnchantedLoveGardenApp {
         } catch (error) {
             console.error('Error saving data:', error);
             this.showNotification('Error saving data', 'error');
+        }
+    }
+
+    async editItem(section, id) {
+        try {
+            const card = document.querySelector(`.${section.slice(0, -1)}-card[data-id="${id}"]`);
+            
+            if (section === 'affirmations') {
+                const textElement = card.querySelector(`.${section.slice(0, -1)}-text`);
+                const currentText = textElement.textContent;
+                
+                const newText = prompt('Edit your affirmation:', currentText);
+                if (newText && newText !== currentText) {
+                    const response = await fetch(`/api/edit/${section}/${id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ text: newText })
+                    });
+                    
+                    if (response.ok) {
+                        await this.showSection(section);
+                        this.showNotification('Updated successfully!', 'success');
+                    }
+                }
+            } else if (section === 'date_ideas') {
+                const titleElement = card.querySelector('.date_idea-text');
+                const descriptionElement = card.querySelector('.date_idea-description');
+                const currentTitle = titleElement.textContent;
+                const currentDescription = descriptionElement.textContent;
+                
+                const newTitle = prompt('Edit title:', currentTitle);
+                if (newTitle && newTitle !== currentTitle) {
+                    const newDescription = prompt('Edit description:', currentDescription);
+                    if (newDescription !== null) {
+                        const response = await fetch(`/api/edit/${section}/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                title: newTitle, 
+                                description: newDescription || currentDescription 
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            await this.showSection(section);
+                            this.showNotification('Updated successfully!', 'success');
+                        }
+                    }
+                }
+            } else if (section === 'diary_entries') {
+                const titleElement = card.querySelector('.diary_entry-text');
+                const contentElement = card.querySelector('.diary_entry-content');
+                const currentTitle = titleElement.textContent;
+                const currentContent = contentElement.textContent;
+                
+                const newTitle = prompt('Edit title:', currentTitle);
+                if (newTitle && newTitle !== currentTitle) {
+                    const newContent = prompt('Edit content:', currentContent);
+                    if (newContent !== null) {
+                        const response = await fetch(`/api/edit/${section}/${id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ 
+                                title: newTitle, 
+                                content: newContent || currentContent 
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            await this.showSection(section);
+                            this.showNotification('Updated successfully!', 'success');
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error editing item:', error);
+            this.showNotification('Error editing item', 'error');
+        }
+    }
+
+    async deleteItem(section, id) {
+        if (confirm('Are you sure you want to delete this item?')) {
+            try {
+                const response = await fetch(`/api/delete/${section}/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    await this.showSection(section);
+                    this.showNotification('Deleted successfully!', 'success');
+                }
+            } catch (error) {
+                console.error('Error deleting item:', error);
+                this.showNotification('Error deleting item', 'error');
+            }
         }
     }
 

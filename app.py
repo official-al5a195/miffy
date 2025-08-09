@@ -4,49 +4,74 @@ import logging
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.orm import DeclarativeBase
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
 
+class Base(DeclarativeBase):
+    pass
+
+db = SQLAlchemy(model_class=Base)
+
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "enchanted_love_garden_secret_key_2025")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    "pool_recycle": 300,
+    "pool_pre_ping": True,
+}
+db.init_app(app)
 CORS(app)
 
-# Data storage file
-DATA_FILE = 'data/storage.json'
+# Create tables
+with app.app_context():
+    db.create_all()
 
-def load_data():
-    """Load data from JSON file"""
-    try:
-        if os.path.exists(DATA_FILE):
-            with open(DATA_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-    except Exception as e:
-        logging.error(f"Error loading data: {e}")
-    
-    # Return default structure
-    return {
-        "users": {},
-        "global_data": {
-            "affirmations": [],
-            "date_ideas": [],
-            "diary_entries": [],
-            "heart_game_scores": [],
-            "koala_stats": {"happiness": 50, "hunger": 50, "energy": 50},
-            "game_scores": {"sudoku": [], "tictactoe": [], "cardmatch": []}
-        }
-    }
+# Database Models
+class Affirmation(db.Model):
+    __tablename__ = 'affirmations'
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    user_type = db.Column(db.String(50), nullable=False)
+    likes = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-def save_data(data):
-    """Save data to JSON file"""
-    try:
-        os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
-        with open(DATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        return True
-    except Exception as e:
-        logging.error(f"Error saving data: {e}")
-        return False
+class DateIdea(db.Model):
+    __tablename__ = 'date_ideas'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), nullable=False, default='romantic')
+    user_type = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class DiaryEntry(db.Model):
+    __tablename__ = 'diary_entries'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    mood = db.Column(db.String(50), nullable=False, default='happy')
+    user_type = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class KoalaStats(db.Model):
+    __tablename__ = 'koala_stats'
+    id = db.Column(db.Integer, primary_key=True)
+    happiness = db.Column(db.Integer, default=50)
+    hunger = db.Column(db.Integer, default=50)
+    energy = db.Column(db.Integer, default=50)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class GameScore(db.Model):
+    __tablename__ = 'game_scores'
+    id = db.Column(db.Integer, primary_key=True)
+    game_type = db.Column(db.String(50), nullable=False)
+    score = db.Column(db.Integer, nullable=False)
+    time_taken = db.Column(db.Integer, default=0)
+    user_type = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 @app.route('/')
 def index():
@@ -86,27 +111,46 @@ def handle_data(section):
     if not session.get('authenticated'):
         return jsonify({"error": "Not authenticated"}), 401
     
-    data = load_data()
-    user_id = session.get('user_type', 'default')
-    
-    # Ensure user data exists
-    if user_id not in data['users']:
-        data['users'][user_id] = {
-            "affirmations": [],
-            "date_ideas": [],
-            "diary_entries": [],
-            "heart_game_scores": [],
-            "game_scores": {"sudoku": [], "tictactoe": [], "cardmatch": []},
-            "theme": session.get('theme', 'keychain')
-        }
-    
-    user_data = data['users'][user_id]
+    user_type = session.get('user_type', 'default')
     
     if request.method == 'GET':
-        if section == 'koala_stats':
-            return jsonify(data['global_data']['koala_stats'])
-        elif section in user_data:
-            return jsonify(user_data[section])
+        if section == 'affirmations':
+            affirmations = Affirmation.query.filter_by(user_type=user_type).order_by(Affirmation.created_at.desc()).all()
+            return jsonify([{
+                'id': a.id, 
+                'text': a.text, 
+                'likes': a.likes, 
+                'date': a.created_at.isoformat()
+            } for a in affirmations])
+        elif section == 'date_ideas':
+            ideas = DateIdea.query.filter_by(user_type=user_type).order_by(DateIdea.created_at.desc()).all()
+            return jsonify([{
+                'id': d.id, 
+                'title': d.title, 
+                'description': d.description, 
+                'category': d.category, 
+                'date': d.created_at.isoformat()
+            } for d in ideas])
+        elif section == 'diary_entries':
+            entries = DiaryEntry.query.filter_by(user_type=user_type).order_by(DiaryEntry.created_at.desc()).all()
+            return jsonify([{
+                'id': e.id, 
+                'title': e.title, 
+                'content': e.content, 
+                'mood': e.mood, 
+                'date': e.created_at.isoformat()
+            } for e in entries])
+        elif section == 'koala_stats':
+            stats = KoalaStats.query.first()
+            if not stats:
+                stats = KoalaStats()
+                db.session.add(stats)
+                db.session.commit()
+            return jsonify({
+                'happiness': stats.happiness,
+                'hunger': stats.hunger,
+                'energy': stats.energy
+            })
         else:
             return jsonify([])
     
@@ -114,58 +158,128 @@ def handle_data(section):
         content = request.get_json()
         
         if section == 'affirmations':
-            affirmation = {
-                "id": len(user_data['affirmations']) + 1,
-                "text": content.get('text', ''),
-                "date": datetime.now().isoformat(),
-                "likes": 0
-            }
-            user_data['affirmations'].append(affirmation)
+            affirmation = Affirmation(
+                text=content.get('text', ''),
+                user_type=user_type
+            )
+            db.session.add(affirmation)
+            db.session.commit()
+            return jsonify({"success": True, "id": affirmation.id})
             
         elif section == 'date_ideas':
-            idea = {
-                "id": len(user_data['date_ideas']) + 1,
-                "title": content.get('title', ''),
-                "description": content.get('description', ''),
-                "category": content.get('category', 'romantic'),
-                "date": datetime.now().isoformat()
-            }
-            user_data['date_ideas'].append(idea)
+            idea = DateIdea(
+                title=content.get('title', ''),
+                description=content.get('description', ''),
+                category=content.get('category', 'romantic'),
+                user_type=user_type
+            )
+            db.session.add(idea)
+            db.session.commit()
+            return jsonify({"success": True, "id": idea.id})
             
         elif section == 'diary_entries':
-            entry = {
-                "id": len(user_data['diary_entries']) + 1,
-                "title": content.get('title', ''),
-                "content": content.get('content', ''),
-                "mood": content.get('mood', 'happy'),
-                "date": datetime.now().isoformat()
-            }
-            user_data['diary_entries'].append(entry)
-            
-        elif section == 'heart_game_score':
-            score = {
-                "score": content.get('score', 0),
-                "date": datetime.now().isoformat()
-            }
-            user_data['heart_game_scores'].append(score)
+            entry = DiaryEntry(
+                title=content.get('title', ''),
+                content=content.get('content', ''),
+                mood=content.get('mood', 'happy'),
+                user_type=user_type
+            )
+            db.session.add(entry)
+            db.session.commit()
+            return jsonify({"success": True, "id": entry.id})
             
         elif section == 'koala_stats':
-            data['global_data']['koala_stats'].update(content)
+            stats = KoalaStats.query.first()
+            if not stats:
+                stats = KoalaStats()
+                db.session.add(stats)
+            
+            stats.happiness = content.get('happiness', stats.happiness)
+            stats.hunger = content.get('hunger', stats.hunger)
+            stats.energy = content.get('energy', stats.energy)
+            stats.updated_at = datetime.utcnow()
+            db.session.commit()
+            return jsonify({"success": True})
             
         elif section == 'game_score':
             game_type = content.get('game_type')
-            if game_type in user_data['game_scores']:
-                score_entry = {
-                    "score": content.get('score', 0),
-                    "time": content.get('time', 0),
-                    "date": datetime.now().isoformat()
-                }
-                user_data['game_scores'][game_type].append(score_entry)
-        
-        if save_data(data):
+            score = GameScore(
+                game_type=game_type,
+                score=content.get('score', 0),
+                time_taken=content.get('time', 0),
+                user_type=user_type
+            )
+            db.session.add(score)
+            db.session.commit()
             return jsonify({"success": True})
-        else:
-            return jsonify({"error": "Failed to save data"}), 500
+        
+        return jsonify({"error": "Invalid section"}), 400
+
+@app.route('/api/edit/<section>/<int:item_id>', methods=['PUT'])
+def edit_item(section, item_id):
+    """Edit an item in a section"""
+    if not session.get('authenticated'):
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    content = request.get_json()
+    
+    if section == 'affirmations':
+        affirmation = Affirmation.query.get(item_id)
+        if not affirmation:
+            return jsonify({"error": "Item not found"}), 404
+        affirmation.text = content.get('text', affirmation.text)
+        db.session.commit()
+        return jsonify({"success": True})
+    elif section == 'date_ideas':
+        idea = DateIdea.query.get(item_id)
+        if not idea:
+            return jsonify({"error": "Item not found"}), 404
+        idea.title = content.get('title', idea.title)
+        idea.description = content.get('description', idea.description)
+        idea.category = content.get('category', idea.category)
+        db.session.commit()
+        return jsonify({"success": True})
+    elif section == 'diary_entries':
+        entry = DiaryEntry.query.get(item_id)
+        if not entry:
+            return jsonify({"error": "Item not found"}), 404
+        entry.title = content.get('title', entry.title)
+        entry.content = content.get('content', entry.content)
+        entry.mood = content.get('mood', entry.mood)
+        db.session.commit()
+        return jsonify({"success": True})
+    
+    return jsonify({"error": "Invalid section"}), 400
+
+@app.route('/api/delete/<section>/<int:item_id>', methods=['DELETE'])
+def delete_item(section, item_id):
+    """Delete an item from a section"""
+    if not session.get('authenticated'):
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    if section == 'affirmations':
+        affirmation = Affirmation.query.get(item_id)
+        if not affirmation:
+            return jsonify({"error": "Item not found"}), 404
+        db.session.delete(affirmation)
+        db.session.commit()
+        return jsonify({"success": True})
+    elif section == 'date_ideas':
+        idea = DateIdea.query.get(item_id)
+        if not idea:
+            return jsonify({"error": "Item not found"}), 404
+        db.session.delete(idea)
+        db.session.commit()
+        return jsonify({"success": True})
+    elif section == 'diary_entries':
+        entry = DiaryEntry.query.get(item_id)
+        if not entry:
+            return jsonify({"error": "Item not found"}), 404
+        db.session.delete(entry)
+        db.session.commit()
+        return jsonify({"success": True})
+    
+    return jsonify({"error": "Invalid section"}), 400
 
 @app.route('/api/like/<section>/<int:item_id>', methods=['POST'])
 def like_item(section, item_id):
@@ -173,19 +287,33 @@ def like_item(section, item_id):
     if not session.get('authenticated'):
         return jsonify({"error": "Not authenticated"}), 401
     
-    data = load_data()
-    user_id = session.get('user_type', 'default')
-    
-    if user_id in data['users'] and section in data['users'][user_id]:
-        items = data['users'][user_id][section]
-        for item in items:
-            if item.get('id') == item_id:
-                item['likes'] = item.get('likes', 0) + 1
-                if save_data(data):
-                    return jsonify({"success": True, "likes": item['likes']})
-                break
+    if section == 'affirmations':
+        affirmation = Affirmation.query.get(item_id)
+        if affirmation:
+            affirmation.likes += 1
+            db.session.commit()
+            return jsonify({"success": True, "likes": affirmation.likes})
     
     return jsonify({"error": "Item not found"}), 404
+
+@app.route('/api/save-game-score', methods=['POST'])
+def save_game_score():
+    """Save game score"""
+    if not session.get('authenticated'):
+        return jsonify({"error": "Not authenticated"}), 401
+    
+    content = request.get_json()
+    user_type = session.get('user_type', 'default')
+    
+    score = GameScore(
+        game_type=content.get('game_type'),
+        score=content.get('score', 0),
+        time_taken=content.get('time_taken', 0),
+        user_type=user_type
+    )
+    db.session.add(score)
+    db.session.commit()
+    return jsonify({"success": True})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
