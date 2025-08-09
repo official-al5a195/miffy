@@ -1,0 +1,19 @@
+{
+    "users": {},
+    "global_data": {
+        "affirmations": [],
+        "date_ideas": [],
+        "diary_entries": [],
+        "heart_game_scores": [],
+        "koala_stats": {
+            "happiness": 50,
+            "hunger": 50,
+            "energy": 50
+        },
+        "game_scores": {
+            "sudoku": [],
+            "tictactoe": [],
+            "cardmatch": []
+        }
+    }
+}

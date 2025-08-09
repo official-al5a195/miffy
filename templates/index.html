@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enchanted Love Garden</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/themes.css') }}">
+</head>
+<body class="flower-animation-body" data-theme="default">
+    
+    <!-- Flower Animation Intro -->
+    <div id="flower-intro" class="flower-intro-container">
+        <div class="night"></div>
+        <div class="flowers">
+            <div class="flower flower--1">
+                <div class="flower__leafs flower__leafs--1">
+                    <div class="flower__leaf flower__leaf--1"></div>
+                    <div class="flower__leaf flower__leaf--2"></div>
+                    <div class="flower__leaf flower__leaf--3"></div>
+                    <div class="flower__leaf flower__leaf--4"></div>
+                    <div class="flower__white-circle"></div>
+                </div>
+                <div class="flower__line">
+                    <div class="flower__line__leaf flower__line__leaf--1"></div>
+                    <div class="flower__line__leaf flower__line__leaf--2"></div>
+                    <div class="flower__line__leaf flower__line__leaf--3"></div>
+                    <div class="flower__line__leaf flower__line__leaf--4"></div>
+                    <div class="flower__line__leaf flower__line__leaf--5"></div>
+                    <div class="flower__line__leaf flower__line__leaf--6"></div>
+                </div>
+            </div>
+
+            <div class="flower flower--2">
+                <div class="flower__leafs flower__leafs--2">
+                    <div class="flower__leaf flower__leaf--1"></div>
+                    <div class="flower__leaf flower__leaf--2"></div>
+                    <div class="flower__leaf flower__leaf--3"></div>
+                    <div class="flower__leaf flower__leaf--4"></div>
+                    <div class="flower__white-circle"></div>
+                </div>
+                <div class="flower__line">
+                    <div class="flower__line__leaf flower__line__leaf--1"></div>
+                    <div class="flower__line__leaf flower__line__leaf--2"></div>
+                    <div class="flower__line__leaf flower__line__leaf--3"></div>
+                    <div class="flower__line__leaf flower__line__leaf--4"></div>
+                </div>
+            </div>
+
+            <div class="flower flower--3">
+                <div class="flower__leafs flower__leafs--3">
+                    <div class="flower__leaf flower__leaf--1"></div>
+                    <div class="flower__leaf flower__leaf--2"></div>
+                    <div class="flower__leaf flower__leaf--3"></div>
+                    <div class="flower__leaf flower__leaf--4"></div>
+                    <div class="flower__white-circle"></div>
+                </div>
+                <div class="flower__line">
+                    <div class="flower__line__leaf flower__line__leaf--1"></div>
+                    <div class="flower__line__leaf flower__line__leaf--2"></div>
+                    <div class="flower__line__leaf flower__line__leaf--3"></div>
+                    <div class="flower__line__leaf flower__line__leaf--4"></div>
+                </div>
+            </div>
+
+            <div class="flower__grass flower__grass--1">
+                <div class="flower__grass--top"></div>
+                <div class="flower__grass--bottom"></div>
+            </div>
+
+            <div class="flower__grass flower__grass--2">
+                <div class="flower__grass--top"></div>
+                <div class="flower__grass--bottom"></div>
+            </div>
+
+            <div class="flower__light flower__light--1"></div>
+            <div class="flower__light flower__light--2"></div>
+            <div class="flower__light flower__light--3"></div>
+            <div class="flower__light flower__light--4"></div>
+            <div class="flower__light flower__light--5"></div>
+            <div class="flower__light flower__light--6"></div>
+            <div class="flower__light flower__light--7"></div>
+            <div class="flower__light flower__light--8"></div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="main-app" class="main-app d-none">
+        
+        <!-- Passcode Entry Screen -->
+        <div id="passcode-screen" class="screen active">
+            <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+                <div class="card passcode-card">
+                    <div class="card-body text-center p-5">
+                        <h1 class="display-4 mb-4">🌸 Enchanted Love Garden 🌸</h1>
+                        <p class="lead mb-4">Enter the secret passcode to enter your magical garden</p>
+                        <form id="passcode-form">
+                            <div class="mb-3">
+                                <input type="password" class="form-control form-control-lg text-center" 
+                                       id="passcode-input" placeholder="Enter passcode" maxlength="4">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-unlock"></i> Enter Garden
+                            </button>
+                        </form>
+                        <div id="passcode-error" class="alert alert-danger mt-3 d-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Selection Screen -->
+        <div id="user-selection-screen" class="screen">
+            <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+                <div class="row w-100 justify-content-center">
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card character-card" data-character="keychain">
+                            <div class="card-body text-center p-4">
+                                <div class="character-icon mb-3">🐰</div>
+                                <h3>Keychain</h3>
+                                <p>Cute bunny aesthetic with pastel flowers and matcha vibes</p>
+                                <button class="btn btn-outline-primary select-character" data-character="keychain">
+                                    Choose Keychain
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card character-card" data-character="bug">
+                            <div class="card-body text-center p-4">
+                                <div class="character-icon mb-3">🐨</div>
+                                <h3>Bug</h3>
+                                <p>Forest koala with fireflies and earthy nature elements</p>
+                                <button class="btn btn-outline-primary select-character" data-character="bug">
+                                    Choose Bug
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Garden Interface -->
+        <div id="garden-screen" class="screen">
+            
+            <!-- Navigation -->
+            <nav class="navbar navbar-expand-lg garden-navbar">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="#" id="garden-title">
+                        <i class="fas fa-seedling"></i> Enchanted Love Garden
+                    </a>
+                    
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav me-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="affirmations">
+                                    <i class="fas fa-heart"></i> Affirmations
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="date-ideas">
+                                    <i class="fas fa-calendar-heart"></i> Date Ideas
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="diary">
+                                    <i class="fas fa-book"></i> Diary
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="heart-game">
+                                    <i class="fas fa-gamepad"></i> Heart Game
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="koala">
+                                    <i class="fas fa-paw"></i> Koala Care
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-section="spotify">
+                                    <i class="fab fa-spotify"></i> Music
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-dice"></i> Games
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" data-section="sudoku"><i class="fas fa-th"></i> Sudoku</a></li>
+                                    <li><a class="dropdown-item" href="#" data-section="tictactoe"><i class="fas fa-times"></i> Tic-Tac-Toe</a></li>
+                                    <li><a class="dropdown-item" href="#" data-section="cardmatch"><i class="fas fa-cards-blank"></i> Card Match</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                        
+                        <div class="navbar-nav">
+                            <div class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-palette"></i> Theme
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item theme-switch" href="#" data-theme="keychain">🐰 Keychain</a></li>
+                                    <li><a class="dropdown-item theme-switch" href="#" data-theme="bug">🐨 Bug</a></li>
+                                    <li><a class="dropdown-item theme-switch" href="#" data-theme="dark">🌙 Dark Magic</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Content Area -->
+            <main id="content-area" class="content-area">
+                <!-- Dynamic content will be loaded here -->
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div id="notification-toast" class="toast" role="alert">
+            <div class="toast-header">
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom Scripts -->
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/games.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
