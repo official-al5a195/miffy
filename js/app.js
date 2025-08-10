@@ -1,158 +1,132 @@
-
 class EnchantedLoveGardenApp {
     constructor() {
-        this.currentUser = 'demo';
+        // --- START: CONFIGURATION ---
+        // PASTE YOUR FIREBASE CONFIGURATION HERE
+        this.firebaseConfig = {
+    apiKey: "AIzaSyA7SstnCUmmv23TEIunQgCSizFvEZVXLOI",
+    authDomain: "miffy-9bf5b.firebaseapp.com",
+    projectId: "miffy-9bf5b",
+    storageBucket: "miffy-9bf5b.firebasestorage.app",
+    messagingSenderId: "407027405062",
+    appId: "1:407027405062:web:7d012efde99f62cbb1ce87",
+    measurementId: "G-JY06KFK2V8"
+    };
+        
+        // PASTE YOUR EMAILJS CONFIGURATION HERE
+        this.emailJSConfig = {
+            serviceID: 'service_t9mupwp',
+            templateID: 'template_ek0oyrb',
+            publicKey: 'QoCQbg9gv8bU5rOfy'
+        };
+        // --- END: CONFIGURATION ---
+
+        this.db = null;
+        this.storage = null;
+        this.currentUser = 'keychain';
         this.currentTheme = 'keychain';
         this.currentSection = 'affirmations';
-        this.data = {
-            affirmations: [],
-            date_ideas: [],
-            diary_entries: [],
-            koala_stats: { happiness: 50, hunger: 50, energy: 50 }
-        };
-        
+        this.editingDiaryId = null; // To track which diary entry is being edited
+
+        this.predefinedAffirmations = [
+            "You are my greatest adventure, my dearest love.",
+            "Your strength and kindness inspire me always.",
+            "In your eyes, I found my home. In your heart, I found my peace.",
+            "You are the most beautiful person, inside and out.",
+            "Thank you for making every moment brighter.",
+            "I love you more than words can express."
+        ];
+
         this.init();
     }
 
-    init() {
+    async init() {
         console.log('Initializing Enchanted Love Garden App...');
         this.setupEventListeners();
-        this.loadDemoData();
+        this.initializeFirebase();
+        this.initializeEmailJS();
         
-        // Check if user is already authenticated
+        // Wait for intro animation
         setTimeout(() => {
-            if (this.checkStoredAuth()) {
-                this.showUserSelection();
-            } else {
-                this.showPasscodeScreen();
-            }
+            this.showPasscodeScreen();
         }, 5000);
     }
 
-    loadDemoData() {
-        // Load demo data for static version
-        this.data.affirmations = [
-            { id: 1, text: "You are amazing and loved! 💕", date: new Date().toISOString(), likes: 5 },
-            { id: 2, text: "Every day with you is a gift 🎁", date: new Date().toISOString(), likes: 3 }
-        ];
-        
-        this.data.date_ideas = [
-            { id: 1, title: "Picnic in the Park", category: "romantic", description: "Pack sandwiches and enjoy nature together", date: new Date().toISOString() },
-            { id: 2, title: "Movie Night", category: "cozy", description: "Cuddle up and watch our favorite films", date: new Date().toISOString() }
-        ];
-        
-        this.data.diary_entries = [
-            { id: 1, title: "Best Day Ever", mood: "happy", content: "Had the most wonderful day together!", date: new Date().toISOString() }
-        ];
+    initializeFirebase() {
+        try {
+            firebase.initializeApp(this.firebaseConfig);
+            this.db = firebase.firestore();
+            this.storage = firebase.storage();
+            console.log("Firebase Initialized Successfully.");
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            this.showNotification("Could not connect to the database.", "error");
+        }
+    }
+
+    initializeEmailJS() {
+        try {
+            emailjs.init(this.emailJSConfig.publicKey);
+            console.log("EmailJS Initialized Successfully.");
+        } catch (error) {
+            console.error("EmailJS initialization failed:", error);
+        }
     }
 
     setupEventListeners() {
-        // Passcode form
         document.addEventListener('submit', (e) => {
             if (e.target.matches('#passcode-form')) {
                 e.preventDefault();
                 this.handlePasscodeSubmit();
             }
-        });
-
-        // Character selection
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('.select-character')) {
-                this.selectCharacter(e.target.dataset.character);
-            }
-        });
-
-        // Navigation
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('[data-section]') || e.target.closest('[data-section]')) {
+            if (e.target.matches('#diary-form')) {
                 e.preventDefault();
-                const sectionElement = e.target.matches('[data-section]') ? e.target : e.target.closest('[data-section]');
-                this.showSection(sectionElement.dataset.section);
+                this.handleDiaryFormSubmit(e.target);
+            }
+             if (e.target.matches('#affirmation-form')) {
+                e.preventDefault();
+                this.handleAddAffirmation(e.target);
             }
         });
 
-        // Theme switching
         document.addEventListener('click', (e) => {
-            if (e.target.matches('.theme-switch')) {
+            const target = e.target;
+            if (target.matches('.select-character')) {
+                this.selectCharacter(target.dataset.character);
+            }
+            if (target.closest('[data-section]')) {
                 e.preventDefault();
-                this.switchTheme(e.target.dataset.theme);
+                this.showSection(target.closest('[data-section]').dataset.section);
+            }
+            if (target.matches('.theme-switch')) {
+                e.preventDefault();
+                this.switchTheme(target.dataset.theme);
+            }
+            if (target.matches('.delete-btn')) {
+                e.preventDefault();
+                this.handleDeleteItem(target.dataset.id, target.dataset.collection);
+            }
+             if (target.matches('.edit-btn')) {
+                e.preventDefault();
+                this.handleEditDiary(target.dataset.id);
+            }
+            if(target.matches('#random-affirmation-btn')) {
+                this.showRandomAffirmation();
             }
         });
-
-        // Form submissions
-        document.addEventListener('submit', (e) => {
-            if (e.target.matches('.section-form')) {
-                e.preventDefault();
-                this.handleSectionForm(e.target);
-            }
-        });
-
-        // Like buttons
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('.like-btn') || e.target.closest('.like-btn')) {
-                e.preventDefault();
-                const btn = e.target.matches('.like-btn') ? e.target : e.target.closest('.like-btn');
-                this.likeItem(btn.dataset.section, btn.dataset.id);
-            }
-        });
-
-        // Delete buttons
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('.delete-btn') || e.target.closest('.delete-btn')) {
-                e.preventDefault();
-                const btn = e.target.matches('.delete-btn') ? e.target : e.target.closest('.delete-btn');
-                this.deleteItem(btn.dataset.section, btn.dataset.id);
-            }
-        });
-
-        // Logout button
-        document.addEventListener('click', (e) => {
-            if (e.target.matches('#logout-btn')) {
-                e.preventDefault();
-                this.logout();
-            }
-        });
-    }
-
-    checkStoredAuth() {
-        // Always return false to ask for passcode every time
-        return false;
-    }
-
-    showPasscodeScreen() {
-        this.showScreen('passcode-screen');
     }
 
     handlePasscodeSubmit() {
         const passcodeInput = document.getElementById('passcode-input');
         const errorDiv = document.getElementById('passcode-error');
-        const passcode = passcodeInput.value.trim();
+        const correctPasscode = '1207'; // Your passcode
         
-        // Set your desired passcode here
-        const correctPasscode = '1207';
-        
-        if (passcode === correctPasscode) {
+        if (passcodeInput.value.trim() === correctPasscode) {
             this.showNotification('Welcome to your garden! 🌸', 'success');
             this.showUserSelection();
         } else {
             errorDiv.textContent = 'Invalid passcode. Please try again.';
             errorDiv.classList.remove('d-none');
-            passcodeInput.value = '';
-            passcodeInput.focus();
         }
-    }
-
-    logout() {
-        if (confirm('Are you sure you want to logout?')) {
-            this.showNotification('Logged out successfully!', 'success');
-            setTimeout(() => {
-                location.reload();
-            }, 1500);
-        }
-    }
-
-    showUserSelection() {
-        this.showScreen('user-selection-screen');
     }
 
     selectCharacter(character) {
@@ -168,763 +142,363 @@ class EnchantedLoveGardenApp {
     }
 
     showScreen(screenId) {
-        const screens = document.querySelectorAll('.screen');
-        screens.forEach(screen => screen.classList.remove('active'));
-        
-        const targetScreen = document.getElementById(screenId);
-        if (targetScreen) {
-            targetScreen.classList.add('active');
-        }
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId)?.classList.add('active');
     }
-
+    
     switchTheme(theme) {
         this.currentTheme = theme;
-        
-        // Update theme via animation system
         if (window.animationSystem) {
             window.animationSystem.setTheme(theme);
         }
-        
-        // Update navbar title based on theme
         const title = document.getElementById('garden-title');
         if (title) {
-            const icons = {
-                keychain: '🐰',
-                bug: '🐨',
-                dark: '🌙'
-            };
+            const icons = { keychain: '🐰', bug: '🐨', dark: '🌙' };
             title.innerHTML = `<i class="fas fa-seedling"></i> ${icons[theme]} Enchanted Love Garden`;
         }
-        
         this.showNotification(`Switched to ${theme} theme`, 'success');
     }
 
     async showSection(sectionName) {
         this.currentSection = sectionName;
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector(`[data-section="${sectionName}"]`)?.classList.add('active');
         
-        // Update navigation
-        const navLinks = document.querySelectorAll('.nav-link');
-        navLinks.forEach(link => link.classList.remove('active'));
-        
-        const activeLink = document.querySelector(`[data-section="${sectionName}"]`);
-        if (activeLink) {
-            activeLink.classList.add('active');
-        }
-        
-        // Load section content
         const contentArea = document.getElementById('content-area');
-        if (contentArea) {
-            contentArea.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
-            
-            try {
-                const content = await this.loadSectionContent(sectionName);
-                contentArea.innerHTML = '';
-                contentArea.appendChild(content);
-                
-                // Add fade in animation
-                if (window.animationSystem) {
-                    window.animationSystem.fadeInContent(content);
-                }
-            } catch (error) {
-                console.error('Error loading section:', error);
-                contentArea.innerHTML = '<div class="alert alert-danger">Error loading section</div>';
-            }
-        }
-    }
-
-    async loadSectionContent(sectionName) {
-        switch (sectionName) {
-            case 'affirmations':
-                return this.createAffirmationsSection();
-            case 'date-ideas':
-                return this.createDateIdeasSection();
-            case 'diary':
-                return this.createDiarySection();
-            case 'heart-game':
-                return this.createHeartGameSection();
-            case 'koala':
-                return this.createKoalaSection();
-            case 'spotify':
-                return this.createSpotifySection();
-            case 'cardmatch':
-                return gameManager.createCardMatch();
-            default:
-                return this.createDefaultSection();
-        }
-    }
-
-    createAffirmationsSection() {
-        const container = document.createElement('div');
-        container.className = 'container';
+        contentArea.innerHTML = '<div class="text-center p-5"><div class="spinner-border" role="status"></div></div>';
         
+        let content;
+        try {
+            switch (sectionName) {
+                case 'affirmations':
+                    content = await this.createAffirmationsSection();
+                    break;
+                case 'diary':
+                    content = await this.createDiarySection();
+                    break;
+                case 'cardmatch':
+                    content = gameManager.createCardMatch();
+                    break;
+                default:
+                    content = document.createElement('div');
+                    content.innerHTML = '<p class="text-center p-4">Section not found.</p>';
+            }
+            contentArea.innerHTML = '';
+            contentArea.appendChild(content);
+            window.animationSystem?.fadeInContent(content);
+        } catch (error) {
+            console.error('Error loading section:', error);
+            contentArea.innerHTML = `<div class="alert alert-danger m-4">Error loading content: ${error.message}</div>`;
+        }
+    }
+
+    // --- AFFIRMATIONS ---
+    async createAffirmationsSection() {
+        const container = document.createElement('div');
+        container.className = 'container py-4';
         container.innerHTML = `
             <div class="row justify-content-center">
                 <div class="col-lg-8">
-                    <div class="section-card card p-4">
+                    <div class="section-card card p-4 mb-4">
                         <h2 class="text-center mb-4"><i class="fas fa-heart"></i> Love Affirmations</h2>
-                        <div class="alert alert-info">
-                            <small><i class="fas fa-info-circle"></i> Demo Mode: Data will not persist after refresh</small>
+                        <div id="random-affirmation-display" class="text-center p-3 mb-3 bg-light rounded">
+                           <p class="lead fst-italic">Click the button for a message!</p>
                         </div>
-                        
-                        <form class="section-form mb-4" data-section="affirmations">
-                            <div class="mb-3">
-                                <label for="affirmation-text" class="form-label">Share a love note or affirmation:</label>
-                                <textarea class="form-control" id="affirmation-text" name="text" rows="3" 
-                                         placeholder="Write something sweet..." required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-heart"></i> Share Love
-                            </button>
-                        </form>
-                        
-                        <div id="affirmations-list">
-                            ${this.renderAffirmations(this.data.affirmations)}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        return container;
-    }
-
-    renderAffirmations(affirmations) {
-        if (!affirmations || affirmations.length === 0) {
-            return '<p class="text-muted text-center">No affirmations yet. Share the first one!</p>';
-        }
-        
-        return affirmations.map(affirmation => `
-            <div class="card mb-3 affirmation-card" data-id="${affirmation.id}">
-                <div class="card-body">
-                    <p class="card-text">${this.escapeHtml(affirmation.text)}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">${new Date(affirmation.date).toLocaleDateString()}</small>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-danger like-btn" 
-                                    data-section="affirmations" data-id="${affirmation.id}">
-                                <i class="fas fa-heart"></i> ${affirmation.likes || 0}
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger delete-btn" 
-                                    data-section="affirmations" data-id="${affirmation.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    createDateIdeasSection() {
-        const container = document.createElement('div');
-        container.className = 'container';
-        
-        container.innerHTML = `
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="section-card card p-4">
-                        <h2 class="text-center mb-4"><i class="fas fa-calendar-heart"></i> Date Ideas</h2>
-                        <div class="alert alert-info">
-                            <small><i class="fas fa-info-circle"></i> Demo Mode: Data will not persist after refresh</small>
-                        </div>
-                        
-                        <div class="card mb-4 bg-light">
-                            <div class="card-body">
-                                <h6><i class="fas fa-envelope"></i> Email Settings</h6>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <input type="email" class="form-control form-control-sm" 
-                                               id="partner-email" placeholder="Partner's email address" 
-                                               value="${this.getPartnerEmail()}">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <button class="btn btn-sm btn-outline-primary" onclick="app.savePartnerEmail()">
-                                            <i class="fas fa-save"></i> Save Email
-                                        </button>
-                                    </div>
-                                </div>
-                                <small class="text-muted">Set your partner's email to send date ideas directly!</small>
-                            </div>
-                        </div>
-                        
-                        <form class="section-form mb-4" data-section="date_ideas">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="idea-title" class="form-label">Date Title:</label>
-                                        <input type="text" class="form-control" id="idea-title" name="title" 
-                                               placeholder="Romantic dinner..." required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="idea-category" class="form-label">Category:</label>
-                                        <select class="form-control" id="idea-category" name="category">
-                                            <option value="romantic">Romantic</option>
-                                            <option value="adventure">Adventure</option>
-                                            <option value="cozy">Cozy</option>
-                                            <option value="creative">Creative</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="idea-description" class="form-label">Description:</label>
-                                <textarea class="form-control" id="idea-description" name="description" rows="3" 
-                                         placeholder="Describe the perfect date..." required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Add Date Idea
-                            </button>
-                        </form>
-                        
-                        <div id="date-ideas-list">
-                            ${this.renderDateIdeas(this.data.date_ideas)}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        return container;
-    }
-
-    renderDateIdeas(dateIdeas) {
-        if (!dateIdeas || dateIdeas.length === 0) {
-            return '<p class="text-muted text-center">No date ideas yet. Add the first one!</p>';
-        }
-        
-        return dateIdeas.map(idea => `
-            <div class="card mb-3" data-id="${idea.id}">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <h5 class="card-title">${this.escapeHtml(idea.title)}</h5>
-                        <span class="badge bg-primary">${idea.category}</span>
-                    </div>
-                    <p class="card-text">${this.escapeHtml(idea.description)}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">${new Date(idea.date).toLocaleDateString()}</small>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-outline-primary email-btn" 
-                                    onclick="app.emailDateIdea('${this.escapeHtml(idea.title)}', '${this.escapeHtml(idea.description)}', '${idea.category}')">
-                                <i class="fas fa-envelope"></i> Email
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger delete-btn" 
-                                    data-section="date_ideas" data-id="${idea.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    createDiarySection() {
-        const container = document.createElement('div');
-        container.className = 'container';
-        
-        container.innerHTML = `
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="section-card card p-4">
-                        <h2 class="text-center mb-4"><i class="fas fa-book"></i> Love Diary</h2>
-                        <div class="alert alert-info">
-                            <small><i class="fas fa-info-circle"></i> Demo Mode: Data will not persist after refresh</small>
-                        </div>
-                        
-                        <form class="section-form mb-4" data-section="diary_entries">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="mb-3">
-                                        <label for="diary-title" class="form-label">Entry Title:</label>
-                                        <input type="text" class="form-control" id="diary-title" name="title" 
-                                               placeholder="Today's memory..." required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label for="diary-mood" class="form-label">Mood:</label>
-                                        <select class="form-control" id="diary-mood" name="mood">
-                                            <option value="happy">😊 Happy</option>
-                                            <option value="love">💕 In Love</option>
-                                            <option value="excited">🎉 Excited</option>
-                                            <option value="peaceful">😌 Peaceful</option>
-                                            <option value="grateful">🙏 Grateful</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label for="diary-content" class="form-label">Share your thoughts:</label>
-                                <textarea class="form-control" id="diary-content" name="content" rows="5" 
-                                         placeholder="Write about your day, feelings, or memories..." required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-pen"></i> Save Memory
-                            </button>
-                        </form>
-                        
-                        <div id="diary-entries-list">
-                            ${this.renderDiaryEntries(this.data.diary_entries)}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        return container;
-    }
-
-    renderDiaryEntries(entries) {
-        if (!entries || entries.length === 0) {
-            return '<p class="text-muted text-center">No diary entries yet. Write your first memory!</p>';
-        }
-        
-        const moodEmojis = {
-            happy: '😊',
-            love: '💕',
-            excited: '🎉',
-            peaceful: '😌',
-            grateful: '🙏'
-        };
-        
-        return entries.slice().reverse().map(entry => `
-            <div class="card mb-3" data-id="${entry.id}">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h5 class="card-title">${this.escapeHtml(entry.title)}</h5>
-                        <span class="badge bg-secondary">${moodEmojis[entry.mood] || '😊'}</span>
-                    </div>
-                    <p class="card-text">${this.escapeHtml(entry.content)}</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted">${new Date(entry.date).toLocaleDateString()}</small>
-                        <button class="btn btn-sm btn-outline-danger delete-btn" 
-                                data-section="diary_entries" data-id="${entry.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    createHeartGameSection() {
-        const container = document.createElement('div');
-        container.className = 'container';
-        
-        container.innerHTML = `
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="section-card card p-4">
-                        <h2 class="text-center mb-4"><i class="fas fa-gamepad"></i> Heart Collection Game</h2>
-                        
                         <div class="text-center mb-4">
-                            <div class="mb-3">
-                                <h4>Score: <span id="heart-score">0</span></h4>
-                                <button class="btn btn-primary" onclick="app.startHeartGame()">
-                                    <i class="fas fa-play"></i> Start Game
-                                </button>
-                                <button class="btn btn-outline-secondary ms-2" onclick="app.stopHeartGame()">
-                                    <i class="fas fa-stop"></i> Stop
-                                </button>
-                            </div>
+                            <button id="random-affirmation-btn" class="btn btn-secondary">Get a Random Affirmation</button>
                         </div>
-                        
-                        <div class="heart-game-area" id="heart-game-area">
-                            <div class="text-center pt-5">
-                                <i class="fas fa-heart" style="font-size: 3rem; color: #ccc;"></i>
-                                <p class="mt-3 text-muted">Click "Start Game" to begin collecting hearts!</p>
-                            </div>
-                        </div>
+                    </div>
+
+                    <div class="section-card card p-4">
+                        <h3 class="text-center mb-3">Share Your Own</h3>
+                        <form id="affirmation-form">
+                            <textarea name="text" class="form-control mb-3" rows="3" placeholder="Write a love note..." required></textarea>
+                            <button type="submit" class="btn btn-primary">Add Affirmation</button>
+                        </form>
+                        <hr class="my-4">
+                        <div id="affirmations-list"></div>
                     </div>
                 </div>
             </div>
         `;
-        
-        return container;
-    }
 
-    startHeartGame() {
-        const gameArea = document.getElementById('heart-game-area');
-        const scoreElement = document.getElementById('heart-score');
-        
-        if (!gameArea || !scoreElement) return;
-        
-        // Clear game area
-        gameArea.innerHTML = '';
-        
-        // Initialize game state
-        this.heartGameState = {
-            score: 0,
-            active: true,
-            interval: null
-        };
-        
-        scoreElement.textContent = '0';
-        
-        // Start spawning hearts
-        this.heartGameState.interval = setInterval(() => {
-            if (this.heartGameState.active) {
-                this.spawnHeart();
+        const affirmationListDiv = container.querySelector('#affirmations-list');
+        this.db.collection('affirmations').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            affirmationListDiv.innerHTML = '';
+            if (snapshot.empty) {
+                affirmationListDiv.innerHTML = '<p class="text-muted text-center">No affirmations shared yet.</p>';
+                return;
             }
-        }, 1500);
-        
-        // Stop game after 30 seconds
-        setTimeout(() => {
-            this.stopHeartGame();
-        }, 30000);
-    }
-
-    spawnHeart() {
-        const gameArea = document.getElementById('heart-game-area');
-        if (!gameArea || !this.heartGameState.active) return;
-        
-        const heart = document.createElement('div');
-        heart.className = 'heart floating';
-        heart.innerHTML = '💖';
-        heart.style.left = Math.random() * (gameArea.offsetWidth - 50) + 'px';
-        heart.style.top = Math.random() * (gameArea.offsetHeight - 50) + 'px';
-        
-        heart.addEventListener('click', () => {
-            this.collectHeart(heart);
-        });
-        
-        gameArea.appendChild(heart);
-        
-        // Remove heart after 3 seconds if not collected
-        setTimeout(() => {
-            if (heart.parentNode) {
-                heart.parentNode.removeChild(heart);
-            }
-        }, 3000);
-    }
-
-    collectHeart(heartElement) {
-        this.heartGameState.score++;
-        document.getElementById('heart-score').textContent = this.heartGameState.score;
-        
-        // Animate heart collection
-        if (window.animationSystem) {
-            window.animationSystem.animateHeartCollection(heartElement);
-        }
-    }
-
-    stopHeartGame() {
-        if (this.heartGameState) {
-            this.heartGameState.active = false;
-            if (this.heartGameState.interval) {
-                clearInterval(this.heartGameState.interval);
-            }
-            
-            // Show final score
-            const gameArea = document.getElementById('heart-game-area');
-            if (gameArea) {
-                gameArea.innerHTML = `
-                    <div class="text-center pt-5">
-                        <i class="fas fa-trophy" style="font-size: 3rem; color: gold;"></i>
-                        <h3 class="mt-3">Game Over!</h3>
-                        <p>Final Score: ${this.heartGameState.score}</p>
-                        <small class="text-muted">Note: Scores are not saved in this demo version</small>
-                        <br><button class="btn btn-primary mt-3" onclick="app.startHeartGame()">Play Again</button>
+            snapshot.forEach(doc => {
+                const affirmation = doc.data();
+                const card = document.createElement('div');
+                card.className = 'card mb-3';
+                card.innerHTML = `
+                    <div class="card-body">
+                        <p class="card-text">${affirmation.text}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                           <small class="text-muted">${new Date(affirmation.createdAt.toDate()).toLocaleString()}</small>
+                           <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${doc.id}" data-collection="affirmations">
+                                <i class="fas fa-trash"></i>
+                           </button>
+                        </div>
                     </div>
                 `;
-            }
+                affirmationListDiv.appendChild(card);
+            });
+        });
+        
+        return container;
+    }
+
+    showRandomAffirmation() {
+        const display = document.getElementById('random-affirmation-display');
+        if(display) {
+            const randomIndex = Math.floor(Math.random() * this.predefinedAffirmations.length);
+            display.innerHTML = `<p class="lead fst-italic">"${this.predefinedAffirmations[randomIndex]}"</p>`;
         }
     }
 
-    createKoalaSection() {
-        const container = document.createElement('div');
-        container.className = 'container';
-        
-        const stats = this.data.koala_stats;
-        
-        container.innerHTML = `
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="section-card card p-4">
-                        <h2 class="text-center mb-4"><i class="fas fa-paw"></i> Koala Care</h2>
-                        <div class="alert alert-info">
-                            <small><i class="fas fa-info-circle"></i> Demo Mode: Stats will reset after refresh</small>
-                        </div>
-                        
-                        <div class="text-center mb-4">
-                            <div style="font-size: 6rem;">🐨</div>
-                            <h4>Meet your virtual koala!</h4>
-                        </div>
-                        
-                        <div class="row mb-4">
-                            <div class="col-md-4">
-                                <div class="text-center">
-                                    <i class="fas fa-smile" style="font-size: 2rem; color: #ffd700;"></i>
-                                    <h6>Happiness</h6>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-warning" style="width: ${stats.happiness}%"></div>
-                                    </div>
-                                    <small>${stats.happiness}/100</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-center">
-                                    <i class="fas fa-drumstick-bite" style="font-size: 2rem; color: #28a745;"></i>
-                                    <h6>Hunger</h6>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-success" style="width: ${stats.hunger}%"></div>
-                                    </div>
-                                    <small>${stats.hunger}/100</small>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-center">
-                                    <i class="fas fa-bolt" style="font-size: 2rem; color: #007bff;"></i>
-                                    <h6>Energy</h6>
-                                    <div class="progress">
-                                        <div class="progress-bar bg-info" style="width: ${stats.energy}%"></div>
-                                    </div>
-                                    <small>${stats.energy}/100</small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="text-center">
-                            <button class="btn btn-success me-2" onclick="app.feedKoala()">
-                                <i class="fas fa-leaf"></i> Feed
-                            </button>
-                            <button class="btn btn-primary me-2" onclick="app.playWithKoala()">
-                                <i class="fas fa-gamepad"></i> Play
-                            </button>
-                            <button class="btn btn-info" onclick="app.restKoala()">
-                                <i class="fas fa-bed"></i> Rest
-                            </button>
-                        </div>
-                        
-                        <div id="koala-message" class="mt-3 text-center"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        return container;
-    }
-
-    feedKoala() {
-        this.updateKoalaStat('hunger', 20);
-        this.showKoalaMessage('🍃 Yummy eucalyptus leaves! Your koala is happier!');
-    }
-
-    playWithKoala() {
-        this.updateKoalaStat('happiness', 15);
-        this.updateKoalaStat('energy', -10);
-        this.showKoalaMessage('🎮 Your koala had fun playing but is a bit tired now!');
-    }
-
-    restKoala() {
-        this.updateKoalaStat('energy', 25);
-        this.showKoalaMessage('😴 Your koala had a nice nap and feels refreshed!');
-    }
-
-    updateKoalaStat(stat, change) {
-        this.data.koala_stats[stat] = Math.max(0, Math.min(100, this.data.koala_stats[stat] + change));
-        
-        // Update UI
-        setTimeout(() => {
-            this.showSection('koala');
-        }, 1000);
-    }
-
-    showKoalaMessage(message) {
-        const messageDiv = document.getElementById('koala-message');
-        if (messageDiv) {
-            messageDiv.innerHTML = `<div class="alert alert-info">${message}</div>`;
-        }
-    }
-
-    createSpotifySection() {
-        const container = document.createElement('div');
-        container.className = 'container';
-        
-        container.innerHTML = `
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="section-card card p-4">
-                        <h2 class="text-center mb-4"><i class="fab fa-spotify"></i> Our Love Playlist</h2>
-                        
-                        <div class="text-center mb-4">
-                            <p class="lead">Listen to our special songs together 💕</p>
-                        </div>
-                        
-                        <div class="spotify-embed">
-                            <iframe style="border-radius:12px" 
-                                    src="https://open.spotify.com/embed/playlist/1iPA0mTP93BTOwzcz006UV?utm_source=generator" 
-                                    width="100%" height="352" frameBorder="0" allowfullscreen="" 
-                                    allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                                    loading="lazy"></iframe>
-                        </div>
-                        
-                        <div class="text-center mt-4">
-                            <p class="text-muted">
-                                <i class="fas fa-headphones"></i> 
-                                Enjoy our curated playlist of love songs!
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        return container;
-    }
-
-    createDefaultSection() {
-        const container = document.createElement('div');
-        container.className = 'container';
-        
-        container.innerHTML = `
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="section-card card p-4 text-center">
-                        <h2><i class="fas fa-seedling"></i> Welcome to Your Love Garden</h2>
-                        <p class="lead">Choose a section from the navigation to start exploring!</p>
-                        <div class="alert alert-warning">
-                            <strong>Demo Version:</strong> This is a static demo. Data will not persist after page refresh.
-                        </div>
-                        <div class="row mt-4">
-                            <div class="col-md-6 mb-3">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <i class="fas fa-heart fa-2x mb-2"></i>
-                                        <h5>Affirmations</h5>
-                                        <p>Share love notes and affirmations</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <div class="card">
-                                    <div class="card-body">
-                                        <i class="fas fa-calendar-heart fa-2x mb-2"></i>
-                                        <h5>Date Ideas</h5>
-                                        <p>Plan romantic adventures together</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        return container;
-    }
-
-    handleSectionForm(form) {
-        const section = form.dataset.section;
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-        
-        // Add to local data (demo only)
-        const newItem = {
-            id: Date.now(),
-            ...data,
-            date: new Date().toISOString(),
-            likes: 0
+    async handleAddAffirmation(form) {
+        const textarea = form.querySelector('textarea[name="text"]');
+        const text = textarea.value;
+        const newAffirmation = {
+            text: text,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         };
-        
-        this.data[section].push(newItem);
-        form.reset();
-        this.showNotification('Added successfully! (Demo only - data will not persist)', 'success');
-        
-        // Refresh the section
-        setTimeout(() => {
-            this.showSection(this.currentSection);
-        }, 1000);
+
+        try {
+            const docRef = await this.db.collection('affirmations').add(newAffirmation);
+            this.showNotification('Affirmation added!', 'success');
+            form.reset();
+            this.sendChangeNotification('Affirmations', 'Created', JSON.stringify(newAffirmation, null, 2));
+        } catch (error) {
+            console.error("Error adding affirmation: ", error);
+            this.showNotification('Failed to add affirmation.', 'error');
+        }
     }
 
-    likeItem(section, itemId) {
-        const items = this.data[section];
-        const item = items.find(i => i.id == itemId);
-        if (item) {
-            item.likes = (item.likes || 0) + 1;
-            
-            // Update the like count in UI
-            const likeBtn = document.querySelector(`[data-section="${section}"][data-id="${itemId}"]`);
-            if (likeBtn) {
-                likeBtn.innerHTML = `<i class="fas fa-heart"></i> ${item.likes}`;
+
+    // --- DIARY ---
+    async createDiarySection() {
+        this.editingDiaryId = null; // Reset editing state
+        const container = document.createElement('div');
+        container.className = 'container py-4';
+        container.innerHTML = `
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+                    <div class="section-card card p-4 mb-4">
+                        <h2 id="diary-form-title" class="text-center mb-4"><i class="fas fa-book-open"></i> Share a Memory</h2>
+                        <form id="diary-form">
+                            <div class="mb-3">
+                                <label for="diary-title" class="form-label">Title</label>
+                                <input type="text" id="diary-title" name="title" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="diary-content" class="form-label">Content</label>
+                                <textarea id="diary-content" name="content" class="form-control" rows="5" required></textarea>
+                            </div>
+                             <div class="mb-3">
+                                <label for="diary-image" class="form-label">Add a Picture (Optional)</label>
+                                <input type="file" id="diary-image" name="image" class="form-control" accept="image/*">
+                                <div id="image-upload-progress" class="progress mt-2 d-none"><div class="progress-bar"></div></div>
+                            </div>
+                            <button type="submit" id="diary-submit-btn" class="btn btn-primary">Save Memory</button>
+                        </form>
+                    </div>
+                    <hr>
+                    <h2 class="text-center my-4">Our Diary</h2>
+                    <div id="diary-entries-list" class="row"></div>
+                </div>
+            </div>
+        `;
+        
+        const diaryListDiv = container.querySelector('#diary-entries-list');
+        this.db.collection('diary').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            diaryListDiv.innerHTML = '';
+             if (snapshot.empty) {
+                diaryListDiv.innerHTML = '<p class="text-muted text-center col-12">No diary entries yet. Share the first memory!</p>';
+                return;
             }
-            this.showNotification('Liked!', 'success');
-        }
+            snapshot.forEach(doc => {
+                const entry = doc.data();
+                const col = document.createElement('div');
+                col.className = 'col-lg-6 mb-4';
+                let imageHtml = entry.imageUrl ? `<img src="${entry.imageUrl}" class="card-img-top" alt="${entry.title}">` : '';
+
+                col.innerHTML = `
+                    <div class="card h-100 diary-card">
+                        ${imageHtml}
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title">${entry.title}</h5>
+                            <p class="card-text flex-grow-1">${entry.content.replace(/\n/g, '<br>')}</p>
+                            <div class="mt-auto">
+                                <small class="text-muted d-block mb-2">${new Date(entry.createdAt.toDate()).toLocaleString()}</small>
+                                <button class="btn btn-sm btn-outline-secondary edit-btn" data-id="${doc.id}">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${doc.id}" data-collection="diary">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                diaryListDiv.appendChild(col);
+            });
+        });
+        return container;
     }
 
-    deleteItem(section, itemId) {
-        if (confirm('Are you sure you want to delete this item?')) {
-            this.data[section] = this.data[section].filter(item => item.id != itemId);
-            this.showNotification('Deleted successfully!', 'success');
-            this.showSection(this.currentSection);
-        }
-    }
+    async handleDiaryFormSubmit(form) {
+        const submitBtn = form.querySelector('#diary-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Saving...';
 
-    showNotification(message, type = 'info') {
-        const toast = document.getElementById('notification-toast');
-        const toastBody = toast.querySelector('.toast-body');
+        const title = form.querySelector('#diary-title').value;
+        const content = form.querySelector('#diary-content').value;
+        const imageFile = form.querySelector('#diary-image').files[0];
+
+        let imageUrl = form.dataset.editingImageUrl || null; // Preserve old image url if not changed
+
+        if (imageFile) {
+            try {
+                imageUrl = await this.uploadImage(imageFile);
+            } catch (error) {
+                this.showNotification(`Image upload failed: ${error.message}`, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Save Memory';
+                return;
+            }
+        }
         
-        if (toast && toastBody) {
-            toastBody.textContent = message;
-            toast.className = `toast ${type === 'error' ? 'bg-danger text-white' : type === 'success' ? 'bg-success text-white' : ''}`;
+        const entryData = { title, content, imageUrl };
+
+        try {
+            if (this.editingDiaryId) {
+                // Update existing entry
+                entryData.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+                await this.db.collection('diary').doc(this.editingDiaryId).update(entryData);
+                this.showNotification('Memory updated!', 'success');
+                this.sendChangeNotification('Diary', 'Updated', JSON.stringify({id: this.editingDiaryId, ...entryData}, null, 2));
+            } else {
+                // Create new entry
+                entryData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                await this.db.collection('diary').add(entryData);
+                this.showNotification('Memory saved!', 'success');
+                this.sendChangeNotification('Diary', 'Created', JSON.stringify(entryData, null, 2));
+            }
+        } catch (error) {
+             this.showNotification(`Failed to save memory: ${error.message}`, 'error');
+        } finally {
+            this.editingDiaryId = null;
+            form.reset();
+            form.querySelector('#diary-form-title').textContent = 'Share a Memory';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Save Memory';
+            form.dataset.editingImageUrl = '';
+            document.getElementById('image-upload-progress').classList.add('d-none');
+        }
+    }
+    
+    async handleEditDiary(id) {
+        try {
+            const doc = await this.db.collection('diary').doc(id).get();
+            if (!doc.exists) {
+                this.showNotification("Diary entry not found.", 'error');
+                return;
+            }
+            const entry = doc.data();
+            this.editingDiaryId = id;
+
+            document.getElementById('diary-form-title').textContent = 'Edit Your Memory';
+            document.getElementById('diary-title').value = entry.title;
+            document.getElementById('diary-content').value = entry.content;
+            document.getElementById('diary-submit-btn').textContent = 'Update Memory';
+            document.querySelector('#diary-form').dataset.editingImageUrl = entry.imageUrl || '';
             
-            const bsToast = new bootstrap.Toast(toast);
-            bsToast.show();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.getElementById('diary-title').focus();
+        } catch (error) {
+            this.showNotification(`Error loading entry for editing: ${error.message}`, 'error');
         }
     }
 
-    getPartnerEmail() {
-        return localStorage.getItem('partner_email') || 'your.partner@example.com';
-    }
+    async handleDeleteItem(id, collectionName) {
+        if (!confirm('Are you sure you want to delete this? This cannot be undone.')) return;
+        
+        try {
+            // If deleting a diary entry with an image, delete the image from storage first
+            if (collectionName === 'diary') {
+                const doc = await this.db.collection(collectionName).doc(id).get();
+                if (doc.exists && doc.data().imageUrl) {
+                    const imageRef = this.storage.refFromURL(doc.data().imageUrl);
+                    await imageRef.delete();
+                }
+            }
+            
+            await this.db.collection(collectionName).doc(id).delete();
+            this.showNotification('Item deleted successfully.', 'success');
+            this.sendChangeNotification(collectionName, 'Deleted', JSON.stringify({id: id}, null, 2));
 
-    savePartnerEmail() {
-        const emailInput = document.getElementById('partner-email');
-        if (emailInput && emailInput.value.trim()) {
-            localStorage.setItem('partner_email', emailInput.value.trim());
-            this.showNotification('Partner email saved!', 'success');
+        } catch (error) {
+            this.showNotification(`Failed to delete item: ${error.message}`, 'error');
         }
     }
 
-    emailDateIdea(title, description, category) {
-        const recipientEmail = this.getPartnerEmail();
-        
-        const subject = `💕 Date Idea: ${title}`;
-        const body = `Hi love! 💕
+    uploadImage(file) {
+        return new Promise((resolve, reject) => {
+            const filePath = `diary-images/${Date.now()}_${file.name}`;
+            const fileRef = this.storage.ref(filePath);
+            const uploadTask = fileRef.put(file);
 
-I have a wonderful date idea to share with you:
-
-📅 **${title}**
-🏷️ Category: ${category}
-
-💡 **Description:**
-${description}
-
-What do you think? I can't wait to experience this together! 
-
-Love you always! 🌸💖
-
-P.S. This was sent from our Enchanted Love Garden! 🐰🌹`;
-
-        // Create mailto link
-        const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        
-        // Open email client
-        window.location.href = mailtoLink;
-        
-        this.showNotification('Opening email client...', 'success');
+            const progressDiv = document.getElementById('image-upload-progress');
+            const progressBar = progressDiv.querySelector('.progress-bar');
+            progressDiv.classList.remove('d-none');
+            
+            uploadTask.on('state_changed', 
+                (snapshot) => { // Progress
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    progressBar.style.width = progress + '%';
+                    progressBar.textContent = Math.round(progress) + '%';
+                }, 
+                (error) => { // Error
+                    progressDiv.classList.add('d-none');
+                    reject(error);
+                }, 
+                () => { // Complete
+                    progressDiv.classList.add('d-none');
+                    uploadTask.snapshot.ref.getDownloadURL().then(resolve);
+                }
+            );
+        });
     }
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    // --- UTILITIES ---
+    showNotification(message, type = 'info') {
+        const toastEl = document.getElementById('notification-toast');
+        const toastBody = toastEl.querySelector('.toast-body');
+        
+        toastBody.textContent = message;
+        toastEl.className = `toast show ${type === 'error' ? 'bg-danger text-white' : type === 'success' ? 'bg-success text-white' : 'bg-light'}`;
+        
+        const bsToast = new bootstrap.Toast(toastEl);
+        bsToast.show();
     }
+
+    sendChangeNotification(section, action, data) {
+        if (!this.emailJSConfig.serviceID) return; // Don't send if not configured
+
+        const templateParams = { section, action, data };
+        
+        emailjs.send(this.emailJSConfig.serviceID, this.emailJSConfig.templateID, templateParams)
+            .then((response) => {
+               console.log('Notification email sent!', response.status, response.text);
+            }, (error) => {
+               console.log('Failed to send notification email.', error);
+            });
+    }
+
+    showPasscodeScreen() { this.showScreen('passcode-screen'); }
+    showUserSelection() { this.showScreen('user-selection-screen'); }
 }
 
-// Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.app = new EnchantedLoveGardenApp();
-    console.log('Enchanted Love Garden App initialized');
 });
