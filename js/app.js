@@ -19,9 +19,13 @@ class EnchantedLoveGardenApp {
         this.setupEventListeners();
         this.loadDemoData();
         
-        // Skip passcode and show character selection after flower animation
+        // Check if user is already authenticated
         setTimeout(() => {
-            this.showUserSelection();
+            if (this.checkStoredAuth()) {
+                this.showUserSelection();
+            } else {
+                this.showPasscodeScreen();
+            }
         }, 5000);
     }
 
@@ -43,6 +47,14 @@ class EnchantedLoveGardenApp {
     }
 
     setupEventListeners() {
+        // Passcode form
+        document.addEventListener('submit', (e) => {
+            if (e.target.matches('#passcode-form')) {
+                e.preventDefault();
+                this.handlePasscodeSubmit();
+            }
+        });
+
         // Character selection
         document.addEventListener('click', (e) => {
             if (e.target.matches('.select-character')) {
@@ -92,6 +104,69 @@ class EnchantedLoveGardenApp {
                 this.deleteItem(btn.dataset.section, btn.dataset.id);
             }
         });
+
+        // Logout button
+        document.addEventListener('click', (e) => {
+            if (e.target.matches('#logout-btn')) {
+                e.preventDefault();
+                this.logout();
+            }
+        });
+    }
+
+    checkStoredAuth() {
+        const authData = localStorage.getItem('enchanted_garden_auth');
+        if (authData) {
+            const { authenticated, timestamp } = JSON.parse(authData);
+            // Check if authentication is still valid (7 days)
+            const sevenDays = 7 * 24 * 60 * 60 * 1000;
+            if (authenticated && (Date.now() - timestamp < sevenDays)) {
+                return true;
+            } else {
+                localStorage.removeItem('enchanted_garden_auth');
+            }
+        }
+        return false;
+    }
+
+    showPasscodeScreen() {
+        this.showScreen('passcode-screen');
+    }
+
+    handlePasscodeSubmit() {
+        const passcodeInput = document.getElementById('passcode-input');
+        const errorDiv = document.getElementById('passcode-error');
+        const passcode = passcodeInput.value.trim();
+        
+        // Set your desired passcode here
+        const correctPasscode = '1207';
+        
+        if (passcode === correctPasscode) {
+            // Save authentication to localStorage
+            const authData = {
+                authenticated: true,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('enchanted_garden_auth', JSON.stringify(authData));
+            
+            this.showNotification('Welcome to your garden! 🌸', 'success');
+            this.showUserSelection();
+        } else {
+            errorDiv.textContent = 'Invalid passcode. Please try again.';
+            errorDiv.classList.remove('d-none');
+            passcodeInput.value = '';
+            passcodeInput.focus();
+        }
+    }
+
+    logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            localStorage.removeItem('enchanted_garden_auth');
+            this.showNotification('Logged out successfully!', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
     }
 
     showUserSelection() {

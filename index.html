@@ -94,8 +94,30 @@
     <!-- Main Application -->
     <div id="main-app" class="main-app d-none">
         
+        <!-- Passcode Entry Screen -->
+        <div id="passcode-screen" class="screen active">
+            <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+                <div class="card passcode-card">
+                    <div class="card-body text-center p-5">
+                        <h1 class="display-4 mb-4">🌸 Enchanted Love Garden 🌸</h1>
+                        <p class="lead mb-4">Enter the secret passcode to enter your magical garden</p>
+                        <form id="passcode-form">
+                            <div class="mb-3">
+                                <input type="password" class="form-control form-control-lg text-center" 
+                                       id="passcode-input" placeholder="Enter passcode" maxlength="4">
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-unlock"></i> Enter Garden
+                            </button>
+                        </form>
+                        <div id="passcode-error" class="alert alert-danger mt-3 d-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- Character Selection Screen -->
-        <div id="user-selection-screen" class="screen active">
+        <div id="user-selection-screen" class="screen">
             <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
                 <div class="row w-100 justify-content-center">
                     <div class="col-md-6 col-lg-4 mb-4">
@@ -188,6 +210,8 @@
                                     <li><a class="dropdown-item theme-switch" href="#" data-theme="keychain">🐰 Keychain</a></li>
                                     <li><a class="dropdown-item theme-switch" href="#" data-theme="bug">🐨 Bug</a></li>
                                     <li><a class="dropdown-item theme-switch" href="#" data-theme="dark">🌙 Dark Magic</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                                 </ul>
                             </div>
                         </div>
