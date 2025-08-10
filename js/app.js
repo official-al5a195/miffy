@@ -115,17 +115,7 @@ class EnchantedLoveGardenApp {
     }
 
     checkStoredAuth() {
-        const authData = localStorage.getItem('enchanted_garden_auth');
-        if (authData) {
-            const { authenticated, timestamp } = JSON.parse(authData);
-            // Check if authentication is still valid (7 days)
-            const sevenDays = 7 * 24 * 60 * 60 * 1000;
-            if (authenticated && (Date.now() - timestamp < sevenDays)) {
-                return true;
-            } else {
-                localStorage.removeItem('enchanted_garden_auth');
-            }
-        }
+        // Always return false to ask for passcode every time
         return false;
     }
 
@@ -142,13 +132,6 @@ class EnchantedLoveGardenApp {
         const correctPasscode = '1207';
         
         if (passcode === correctPasscode) {
-            // Save authentication to localStorage
-            const authData = {
-                authenticated: true,
-                timestamp: Date.now()
-            };
-            localStorage.setItem('enchanted_garden_auth', JSON.stringify(authData));
-            
             this.showNotification('Welcome to your garden! 🌸', 'success');
             this.showUserSelection();
         } else {
@@ -161,7 +144,6 @@ class EnchantedLoveGardenApp {
 
     logout() {
         if (confirm('Are you sure you want to logout?')) {
-            localStorage.removeItem('enchanted_garden_auth');
             this.showNotification('Logged out successfully!', 'success');
             setTimeout(() => {
                 location.reload();
