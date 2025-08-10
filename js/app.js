@@ -328,6 +328,25 @@ class EnchantedLoveGardenApp {
                             <small><i class="fas fa-info-circle"></i> Demo Mode: Data will not persist after refresh</small>
                         </div>
                         
+                        <div class="card mb-4 bg-light">
+                            <div class="card-body">
+                                <h6><i class="fas fa-envelope"></i> Email Settings</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <input type="email" class="form-control form-control-sm" 
+                                               id="partner-email" placeholder="Partner's email address" 
+                                               value="${this.getPartnerEmail()}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="app.savePartnerEmail()">
+                                            <i class="fas fa-save"></i> Save Email
+                                        </button>
+                                    </div>
+                                </div>
+                                <small class="text-muted">Set your partner's email to send date ideas directly!</small>
+                            </div>
+                        </div>
+                        
                         <form class="section-form mb-4" data-section="date_ideas">
                             <div class="row">
                                 <div class="col-md-6">
@@ -385,10 +404,16 @@ class EnchantedLoveGardenApp {
                     <p class="card-text">${this.escapeHtml(idea.description)}</p>
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">${new Date(idea.date).toLocaleDateString()}</small>
-                        <button class="btn btn-sm btn-outline-danger delete-btn" 
-                                data-section="date_ideas" data-id="${idea.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary email-btn" 
+                                    onclick="app.emailDateIdea('${this.escapeHtml(idea.title)}', '${this.escapeHtml(idea.description)}', '${idea.category}')">
+                                <i class="fas fa-envelope"></i> Email
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-btn" 
+                                    data-section="date_ideas" data-id="${idea.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -848,6 +873,47 @@ class EnchantedLoveGardenApp {
             const bsToast = new bootstrap.Toast(toast);
             bsToast.show();
         }
+    }
+
+    getPartnerEmail() {
+        return localStorage.getItem('partner_email') || 'your.partner@example.com';
+    }
+
+    savePartnerEmail() {
+        const emailInput = document.getElementById('partner-email');
+        if (emailInput && emailInput.value.trim()) {
+            localStorage.setItem('partner_email', emailInput.value.trim());
+            this.showNotification('Partner email saved!', 'success');
+        }
+    }
+
+    emailDateIdea(title, description, category) {
+        const recipientEmail = this.getPartnerEmail();
+        
+        const subject = `💕 Date Idea: ${title}`;
+        const body = `Hi love! 💕
+
+I have a wonderful date idea to share with you:
+
+📅 **${title}**
+🏷️ Category: ${category}
+
+💡 **Description:**
+${description}
+
+What do you think? I can't wait to experience this together! 
+
+Love you always! 🌸💖
+
+P.S. This was sent from our Enchanted Love Garden! 🐰🌹`;
+
+        // Create mailto link
+        const mailtoLink = `mailto:${recipientEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        
+        // Open email client
+        window.location.href = mailtoLink;
+        
+        this.showNotification('Opening email client...', 'success');
     }
 
     escapeHtml(text) {
