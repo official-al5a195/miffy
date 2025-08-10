@@ -994,3 +994,21 @@ body {
     background: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
 }
+
+/* --- Add this to your styles.css file --- */
+
+/* Screen Management */
+.screen {
+    display: none; /* Hide all screens by default */
+    width: 100%;
+    animation: fadeIn 0.5s ease-in-out; /* Optional: adds a nice fade effect */
+}
+
+.screen.active {
+    display: block; /* Show only the active screen */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
